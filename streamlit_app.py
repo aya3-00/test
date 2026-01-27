@@ -36,7 +36,6 @@ for todo in todos:
     with col1:
         checkbox = st.checkbox(todo["task"], value=todo["is_complete"], key=f"chk-{todo['id']}")
         if checkbox != todo["is_complete"]:
-            # 完了状態を更新
             try:
                 supabase.table("todos").update({"is_complete": checkbox}).eq("id", todo["id"]).execute()
                 st.experimental_rerun()
