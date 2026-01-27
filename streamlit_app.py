@@ -8,7 +8,9 @@ key = st.secrets["SUPABASE_KEY"]
 
 supabase = create_client(url, key)
 
-# 例: todo というテーブルを読む
-response = supabase.table("todos").select("*").limit(5).execute()
-
-st.write(response.data)
+try:
+    # supabase のバージョンによっては .from_() も使う
+    res = supabase.table("todos").select("*").limit(1).execute()
+    st.write("接続成功！", res.data)
+except Exception as e:
+    st.error(f"接続失敗: {e}")
