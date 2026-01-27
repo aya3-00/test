@@ -13,7 +13,7 @@ supabase = create_client(url, key)
 # 接続テスト
 try:
     # 例: todo というテーブルを取得（最大5件）
-    response = supabase.table("test").select("*").limit(5).execute()
+    response = supabase.table("todos").select("*").limit(5).execute()
     st.success("接続成功！")
     st.write(response.data)
 except Exception as e:
