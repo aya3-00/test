@@ -6,8 +6,8 @@ import numpy as np
 # =====================
 # 基本設定
 # =====================
-st.set_page_config(page_title="ねこスケジュール", layout="centered")
-st.title("🐱 ねこスケジュール (Supabase版)")
+st.set_page_config(page_title="スケジュール管理", layout="centered")
+st.title("🐱 スケジュール管理 (Supabase版)")
 
 # =====================
 # Supabase クライアント
@@ -79,7 +79,7 @@ with st.form("add_task"):
 
         try:
             supabase.table("todos").insert(new_task).execute()
-            st.success(f"🧠 AI予測：{predicted}分くらいにゃ！")
+            st.success(f"🧠 AI予測：{predicted}分くらい！")
             st.rerun()
         except Exception as e:
             st.error(f"タスク追加失敗: {e}")
@@ -92,7 +92,7 @@ st.subheader("📋 タスク一覧")
 
 tasks = get_tasks()
 if not tasks:
-    st.info("まだタスクがないにゃ 🐾")
+    st.info("まだタスクがないよ～ 🐾")
 
 for t in tasks:
     try:
@@ -162,7 +162,7 @@ for t in tasks:
                     {"working": False, "start_at": None, "log": logs}
                 ).eq("id", t["id"]).execute()
 
-                st.success(f"{minutes}分 作業したにゃ 🐾")
+                st.success(f"{minutes}分 作業した！ 🐾")
                 st.rerun()
 
         # ✅ 完了
