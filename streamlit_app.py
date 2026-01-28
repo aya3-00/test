@@ -3,8 +3,6 @@ from supabase import create_client
 from datetime import datetime, date, time, timedelta
 import numpy as np
 
-now = datetime.now()
-
 # =====================
 # 基本設定
 # =====================
@@ -99,12 +97,17 @@ if not tasks:
 for t in tasks:
     try:
         deadline_dt = datetime.fromisoformat(t["deadline"]).replace(tzinfo=None)
+
         start_dt = datetime.combine(
             today,
             datetime.strptime(t.get("start_time", "00:00"), "%H:%M").time()
         )
-        remaining = int((start_dt - now).total_seconds() // 60)
-    except:
+
+        remaining = max(
+            int((start_dt - now).total_seconds() // 60),
+            0
+        )
+    except Exception:
         continue
 
     if t.get("done"):
@@ -132,6 +135,7 @@ for t in tasks:
         )
 
     with col2:
+        # ▶ 開始
         if not t["done"] and not t["working"]:
             if st.button("▶️", key=f"start_{t['id']}"):
                 supabase.table("todos").update(
@@ -139,13 +143,20 @@ for t in tasks:
                 ).eq("id", t["id"]).execute()
                 st.rerun()
 
+        # ⏸ 停止
         if t["working"]:
             if st.button("⏸", key=f"stop_{t['id']}"):
-                start = datetime.fromisoformat(t["start_at"])
-                minutes = max(int((datetime.now() - start).total_seconds() // 60), 1)
+                start = datetime.fromisoformat(t["start_at"]).replace(tzinfo=None)
+                minutes = max(
+                    int((datetime.now() - start).total_seconds() // 60),
+                    1
+                )
 
                 logs = t.get("log") or []
-                logs.append({"time": datetime.now().isoformat(), "minutes": minutes})
+                logs.append({
+                    "time": datetime.now().isoformat(),
+                    "minutes": minutes
+                })
 
                 supabase.table("todos").update(
                     {"working": False, "start_at": None, "log": logs}
@@ -154,6 +165,7 @@ for t in tasks:
                 st.success(f"{minutes}分 作業したにゃ 🐾")
                 st.rerun()
 
+        # ✅ 完了
         if not t["done"]:
             if st.button("✅", key=f"done_{t['id']}"):
                 supabase.table("todos").update(
@@ -161,6 +173,7 @@ for t in tasks:
                 ).eq("id", t["id"]).execute()
                 st.rerun()
 
+        # 🗑 削除
         if st.button("🗑", key=f"del_{t['id']}"):
             supabase.table("todos").delete().eq("id", t["id"]).execute()
             st.rerun()
