@@ -6,8 +6,8 @@ import numpy as np
 # =====================
 # 基本設定
 # =====================
-st.set_page_config(page_title="スケジュール管理", layout="centered")
-st.title("🐱 スケジュール管理 (Supabase版)")
+st.set_page_config(page_title="ねこスケジュール", layout="centered")
+st.title("🐱 ねこスケジュール (Supabase版)")
 
 # =====================
 # Supabase クライアント
@@ -19,8 +19,8 @@ supabase = create_client(url, key)
 # =====================
 # 現在時刻（timezoneなしで統一）
 # =====================
-today = date.today()
 now = datetime.now()
+today = date.today()
 
 # =====================
 # タスク取得
@@ -43,9 +43,10 @@ with st.form("add_task"):
 
     col1, col2 = st.columns(2)
     with col1:
-        deadline_date = st.date_input("期限（日付）", today)
-        start_time_input = st.time_input("開始目安", time(19, 0))
+        start_date = st.date_input("開始日", today)
+        start_time_input = st.time_input("開始時刻", time(19, 0))
     with col2:
+        deadline_date = st.date_input("期限（日付）", today)
         deadline_time = st.time_input("期限（時間）", time(23, 59))
         planned = st.number_input("予定作業時間（分）", 5, 600, 30, 5)
 
@@ -64,13 +65,16 @@ with st.form("add_task"):
         ]
         predicted = int(np.mean(logs)) if len(logs) >= 3 else int(planned * 1.2)
 
+        start_at_planned = datetime.combine(start_date, start_time_input)
+        deadline_dt = datetime.combine(deadline_date, deadline_time)
+
         new_task = {
             "id": int(datetime.now().timestamp() * 1000),
             "title": title,
-            "start_time": start_time_input.strftime("%H:%M"),
+            "start_at_planned": start_at_planned.isoformat(),
             "planned": planned,
             "predicted": predicted,
-            "deadline": datetime.combine(deadline_date, deadline_time).isoformat(),
+            "deadline": deadline_dt.isoformat(),
             "done": False,
             "working": False,
             "start_at": None,
@@ -79,7 +83,7 @@ with st.form("add_task"):
 
         try:
             supabase.table("todos").insert(new_task).execute()
-            st.success(f"🧠 AI予測：{predicted}分くらい！")
+            st.success(f"🧠 AI予測：{predicted}分くらいにゃ！")
             st.rerun()
         except Exception as e:
             st.error(f"タスク追加失敗: {e}")
@@ -92,21 +96,13 @@ st.subheader("📋 タスク一覧")
 
 tasks = get_tasks()
 if not tasks:
-    st.info("まだタスクがないよ～ 🐾")
+    st.info("まだタスクがないにゃ 🐾")
 
 for t in tasks:
     try:
-        deadline_dt = datetime.fromisoformat(t["deadline"]).replace(tzinfo=None)
-
-        start_dt = datetime.combine(
-            today,
-            datetime.strptime(t.get("start_time", "00:00"), "%H:%M").time()
-        )
-
-        remaining = max(
-            int((start_dt - now).total_seconds() // 60),
-            0
-        )
+        start_dt = datetime.fromisoformat(t["start_at_planned"])
+        deadline_dt = datetime.fromisoformat(t["deadline"])
+        remaining = max(int((start_dt - now).total_seconds() // 60), 0)
     except Exception:
         continue
 
@@ -126,7 +122,7 @@ for t in tasks:
             f"""
             <div style="background:#f4f4f4;padding:12px;border-radius:12px">
             {status} <b>{t['title']}</b><br>
-            ⏰ 開始目安：{t['start_time']}（あと {remaining} 分）<br>
+            ⏰ 開始目安：{start_dt.strftime('%m/%d %H:%M')}（あと {remaining} 分）<br>
             🧠 AI予測：{t['predicted']}分 / 🧩 予定：{t['planned']}分<br>
             📅 期限：{deadline_dt.strftime('%m/%d %H:%M')}
             </div>
@@ -135,7 +131,7 @@ for t in tasks:
         )
 
     with col2:
-        # ▶ 開始
+        # 開始
         if not t["done"] and not t["working"]:
             if st.button("▶️", key=f"start_{t['id']}"):
                 supabase.table("todos").update(
@@ -143,29 +139,26 @@ for t in tasks:
                 ).eq("id", t["id"]).execute()
                 st.rerun()
 
-        # ⏸ 停止
+        # 停止
         if t["working"]:
             if st.button("⏸", key=f"stop_{t['id']}"):
-                start = datetime.fromisoformat(t["start_at"]).replace(tzinfo=None)
-                minutes = max(
-                    int((datetime.now() - start).total_seconds() // 60),
-                    1
-                )
+                try:
+                    start_real = datetime.fromisoformat(t["start_at"])
+                    minutes = max(int((datetime.now() - start_real).total_seconds() // 60), 1)
+                except Exception:
+                    minutes = 1
 
                 logs = t.get("log") or []
-                logs.append({
-                    "time": datetime.now().isoformat(),
-                    "minutes": minutes
-                })
+                logs.append({"time": datetime.now().isoformat(), "minutes": minutes})
 
                 supabase.table("todos").update(
                     {"working": False, "start_at": None, "log": logs}
                 ).eq("id", t["id"]).execute()
 
-                st.success(f"{minutes}分 作業した！ 🐾")
+                st.success(f"{minutes}分 作業したにゃ 🐾")
                 st.rerun()
 
-        # ✅ 完了
+        # 完了
         if not t["done"]:
             if st.button("✅", key=f"done_{t['id']}"):
                 supabase.table("todos").update(
@@ -173,7 +166,7 @@ for t in tasks:
                 ).eq("id", t["id"]).execute()
                 st.rerun()
 
-        # 🗑 削除
+        # 削除
         if st.button("🗑", key=f"del_{t['id']}"):
             supabase.table("todos").delete().eq("id", t["id"]).execute()
             st.rerun()
@@ -189,10 +182,10 @@ calendar = {d.strftime("%m/%d"): [] for d in dates}
 
 for t in tasks:
     try:
-        d = datetime.fromisoformat(t["deadline"]).date()
+        d = datetime.fromisoformat(t["start_at_planned"]).date()
         if d in dates:
             calendar[d.strftime("%m/%d")].append(t["title"])
-    except:
+    except Exception:
         pass
 
 st.dataframe(
