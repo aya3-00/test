@@ -17,7 +17,7 @@ with st.form("add_todo"):
         try:
             supabase.table("todos").insert({"task": new_task, "is_complete": False}).execute()
             st.success(f"タスク追加: {new_task}")
-            st.experimental_rerun()
+            st.experimental_refresh()  # ← 最新版対応
         except Exception as e:
             st.error(f"タスク追加に失敗: {e}")
 
@@ -38,13 +38,13 @@ for todo in todos:
         if checkbox != todo["is_complete"]:
             try:
                 supabase.table("todos").update({"is_complete": checkbox}).eq("id", todo["id"]).execute()
-                st.experimental_rerun()
+                st.experimental_refresh()  # ← 最新版対応
             except Exception as e:
                 st.error(f"更新失敗: {e}")
     with col2:
         if st.button("削除", key=f"del-{todo['id']}"):
             try:
                 supabase.table("todos").delete().eq("id", todo["id"]).execute()
-                st.experimental_rerun()
+                st.experimental_refresh()  # ← 最新版対応
             except Exception as e:
                 st.error(f"削除失敗: {e}")
