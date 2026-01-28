@@ -4,8 +4,8 @@ from datetime import datetime, date, time, timedelta
 import numpy as np
 import json
 
-st.set_page_config(page_title="ねこスケジュール", layout="centered")
-st.title("🐱 ねこスケジュール (Supabase版)")
+st.set_page_config(page_title="スケジュール管理", layout="centered")
+st.title("🐱 スケジュール管理 (Supabase版)")
 
 # --- Supabase クライアント ---
 url = st.secrets["general"]["SUPABASE_URL"]
@@ -80,7 +80,7 @@ st.divider()
 st.subheader("📋 タスク一覧")
 tasks = get_tasks()
 if not tasks:
-    st.info("まだタスクがないにゃ 🐾")
+    st.info("まだタスクがないよ～ 🐾")
 
 for t in tasks:
     try:
