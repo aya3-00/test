@@ -3,6 +3,8 @@ from supabase import create_client
 from datetime import datetime, date, time, timedelta
 import numpy as np
 
+now = datetime.now()
+
 # =====================
 # 基本設定
 # =====================
@@ -96,7 +98,7 @@ if not tasks:
 
 for t in tasks:
     try:
-        deadline_dt = datetime.fromisoformat(t["deadline"])
+        deadline_dt = datetime.fromisoformat(t["deadline"]).replace(tzinfo=None)
         start_dt = datetime.combine(
             today,
             datetime.strptime(t.get("start_time", "00:00"), "%H:%M").time()
